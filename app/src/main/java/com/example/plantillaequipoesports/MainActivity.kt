@@ -86,9 +86,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PantallaPlantilla() {
-    val jugadores = remember {
-        mutableStateListOf<Jugador>(
+fun PantallaPlantilla(vm: PlantillaViewModel = PlantillaViewModel()) {
+val jugadores = vm.jugadores
+    /* val jugadores = remember {
+       mutableStateListOf<Jugador>(
             Jugador(
                 id = 1,
                 nombre = "Alejandro Portillo",
@@ -135,16 +136,25 @@ fun PantallaPlantilla() {
                 imagen = R.drawable.jugador5
             ),
         )
-    }
+    }*/
     var nombre by rememberSaveable { mutableStateOf("") }
     var nickname by rememberSaveable { mutableStateOf("") }
     var rol by rememberSaveable { mutableStateOf("") }
     var edadTexto by rememberSaveable { mutableStateOf("") }
     var nivelTexto by rememberSaveable { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
-    var siguienteId by remember { mutableStateOf(6) }
+   // var siguienteId by remember { mutableStateOf(6) }
     var jugadorAEliminar by remember { mutableStateOf<Jugador?>(null) }
-    var idEnEdicion by remember { mutableStateOf<Int?>(null) }
+    var idEnEdicion by rememberSaveable { mutableStateOf<Int?>(null) }
+    fun limpiarFormulario(){
+        nombre = ""
+        nickname = ""
+        rol = ""
+        edadTexto = ""
+        nivelTexto = ""
+        error = ""
+        idEnEdicion = null
+    }
     val coloresCampo = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Color.White,
         unfocusedTextColor = Color.Yellow,
@@ -220,8 +230,28 @@ fun PantallaPlantilla() {
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = {
-                            val nombreLimpio = nombre.trim()
+                        Button(
+                            onClick = {
+                                val mensaje = vm.guardarJugador(
+                                    idEnEdicion = idEnEdicion,
+                                    nombre = nombre,
+                                    nickname = nickname,
+                                    rol = rol,
+                                    edadTexto = edadTexto,
+                                    nivelTexto = nivelTexto
+                                )
+
+                                if (mensaje == null) {
+                                    limpiarFormulario()
+                                } else {
+                                    error = mensaje
+                                }
+                            }
+                        ) {
+                            Text(if (idEnEdicion == null) "Añadir jugador" else "Guardar cambios")
+                        }
+                       /*Button(onClick = {
+                           val nombreLimpio = nombre.trim()
                             val edad = edadTexto.toIntOrNull()
                             val nivel = nivelTexto.toIntOrNull()
                             val imagen = R.drawable.baseline_person_24
@@ -273,9 +303,12 @@ fun PantallaPlantilla() {
                             }
                         }) {
                             Text(if (idEnEdicion == null) "Añadir jugador" else "Guardar cambios")
-                        }
-
+                        }*/
                         if (idEnEdicion != null) {
+                            Button(onClick = { limpiarFormulario() }) {
+                                Text("Cancelar")
+                            }
+                        /*if (idEnEdicion != null) {
                             Button(onClick = {
                                 idEnEdicion = null
                                 nombre = ""
@@ -286,7 +319,7 @@ fun PantallaPlantilla() {
                                 error = ""
                             }) {
                                 Text("Cancelar")
-                            }
+                            }*/
                         }
                     }
 
@@ -328,7 +361,11 @@ fun PantallaPlantilla() {
                 text = { Text("¿Estás seguro de que quieres eliminar a ${pendiente.nickname}?") },
                 confirmButton = {
                     TextButton(onClick = {
-                        jugadores.remove(pendiente)
+                        vm.eliminarJugador(pendiente.id)
+                        if (idEnEdicion == pendiente.id) {
+                            limpiarFormulario()
+                        }
+                        //jugadores.remove(pendiente)
                         jugadorAEliminar = null
                     }) { Text("Eliminar") }
                 },
